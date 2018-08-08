@@ -57,6 +57,7 @@ type App struct {
 	RedisClient      *redis.Client
 	KubernetesClient kubernetes.Interface
 	RoomAddrGetter   models.AddrGetter
+	RoomManager      models.RoomManager
 	Logger           logrus.FieldLogger
 	NewRelic         newrelic.Application
 	Router           *mux.Router
@@ -410,7 +411,7 @@ func (a *App) configureApp(
 
 	a.configureServer(showProfile)
 
-	a.configureRoomAddrGetter()
+	a.configureEnvironment()
 
 	return nil
 }
@@ -546,11 +547,13 @@ func (a *App) configureServer(showProfile bool) {
 	}
 }
 
-func (a *App) configureRoomAddrGetter() {
-	if a.Config.GetString(EnvironmentConfig) != DevEnvironment {
-		a.RoomAddrGetter = &models.RoomAddressesFromHostPort{}
-	} else {
+func (a *App) configureEnvironment() {
+	a.RoomAddrGetter = &models.RoomAddressesFromHostPort{}
+	a.RoomManager = &models.GameRoom{}
+
+	if a.Config.GetString(EnvironmentConfig) == DevEnvironment {
 		a.RoomAddrGetter = &models.RoomAddressesFromNodePort{}
+		a.RoomManager = &models.GameRoomWithService{}
 	}
 }
 
